@@ -1,10 +1,14 @@
-OBJS := ast.cmo eval.cmo
+MAIN := lang
+OBJS := ast.cmo parser.cmo lexer.cmo eval.cmo main.cmo
 
 %.cmo: %.ml
 	ocamlc -c $<
 
 %.cmi: %.mli
 	ocamlc -c $<
+
+$(MAIN): $(OBJS)
+	ocamlc -o $@ $^
 
 lexer.ml: lexer.mll
 	ocamllex -q $<
@@ -16,4 +20,12 @@ parser.mli: parser.mly
 	ocamlyacc -q $<
 
 clean:
-	rm -f *.cmo *.cmi $(MAIN)
+	rm -f *.cmo *.cmi lexer.ml parser.ml parser.mli $(MAIN)
+
+ast.cmo :
+eval.cmo : ast.cmo
+lexer.cmo : parser.cmi
+main.cmo : parser.cmi lexer.cmo eval.cmo
+parser.cmo : ast.cmo parser.cmi
+parser.cmi : ast.cmo
+pprint.cmo : ast.cmo

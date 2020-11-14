@@ -31,7 +31,6 @@ let error lexbuf msg =
     msg
     t in
   raise (LexingError err)
-
 }
 
 let digit = ['-']?['0'-'9']
@@ -70,8 +69,6 @@ rule token = parse
 | "func"  { FUNCTION }
 | "->"    { ARROW }
 | "()"    { UNIT }
-| "int"   { INT  }
-| "char"  { CHAR }
-| var as v  { VAR(v) }
-| digit+ as n { INT(n) }
+| var as v  { VAR v }
+| digit+ as n { INT (int_of_string n) }
 | eof     { EOF }
