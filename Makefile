@@ -1,5 +1,5 @@
 MAIN := lang
-OBJS := ast.cmo parser.cmo lexer.cmo eval.cmo main.cmo
+OBJS := ast.cmo parser.cmo lexer.cmo pprint.cmo eval.cmo main.cmo
 
 %.cmo: %.ml
 	ocamlc -c $<
@@ -23,7 +23,8 @@ clean:
 	rm -f *.cmo *.cmi lexer.ml parser.ml parser.mli $(MAIN)
 
 ast.cmo :
-eval.cmo : ast.cmo
+pprint.cmo : ast.cmo
+eval.cmo : ast.cmo pprint.cmo
 lexer.cmo : parser.cmi
 main.cmo : parser.cmi lexer.cmo eval.cmo
 parser.cmo : ast.cmo parser.cmi

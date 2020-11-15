@@ -1,0 +1,1 @@
+let y = func x -> 1 + 2 in y 3
