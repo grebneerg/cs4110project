@@ -1,0 +1,4 @@
+let x = 10 in 
+let y = 100 in 
+let f = func a -> (func b -> (func c -> a * b - c)) in
+((f 2) x) y

@@ -1,7 +1,11 @@
 open Pprint
+open Eval
 
 let () =
-  let filename = Sys.argv.(1) in
-  let lexbuf = Lexing.from_channel (open_in filename) in
-  let p = Parser.program Lexer.token lexbuf in
-  string_of_program p |> print_endline
+  Sys.argv.(1)
+  |> open_in
+  |> Lexing.from_channel 
+  |> Parser.program Lexer.token
+  |> eval_program
+  |> string_of_value
+  |> print_endline

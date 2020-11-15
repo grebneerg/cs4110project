@@ -35,7 +35,6 @@ let error lexbuf msg =
 
 let digit = ['-']?['0'-'9']
 let id = ['a'-'z'] ['a'-'z' '0'-'9']*
-let var = (['a'-'z'] | ['A'-'Z'] | digit | '_')+
 let ws = [' ' '\t']
 
 rule token = parse 
@@ -69,6 +68,6 @@ rule token = parse
 | "func"  { FUNCTION }
 | "->"    { ARROW }
 | "()"    { UNIT }
-| var as v  { VAR v }
+| id as v  { VAR v }
 | digit+ as n { INT (int_of_string n) }
 | eof     { EOF }
