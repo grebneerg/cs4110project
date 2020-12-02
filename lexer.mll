@@ -38,36 +38,44 @@ let id = ['a'-'z'] ['a'-'z' '0'-'9']*
 let ws = [' ' '\t']
 
 rule token = parse 
-| ws      { token lexbuf }
-| '\n'    { newline lexbuf; token lexbuf }
-| "+"     { PLUS }
-| "-"     { MINUS }
-| "*"     { MUL }
-| "="     { EQUALS }
-| "<>"    { NOTEQUALS }
-| "<"     { LESS }
-| "<="    { LESSEQ }
-| ">"     { GREATER }
-| ">="    { GREATEREQ }
-| "("     { LPAREN }
-| ")"     { RPAREN }
-| "{"     { LCURLY }
-| "}"     { RCURLY }
-| "true"  { TRUE }
-| "false" { FALSE }
-| "not"   { NOT }
-| "&&"    { AND }
-| "||"    { OR }
-| ","     { COMMA }
-| ":"     { COLON }
-| "let"   { LET }
-| "in"    { IN }
-| "if"    { IF }
-| "then"  { THEN }
-| "else"  { ELSE }
-| "func"  { FUNCTION }
-| "->"    { ARROW }
-| "()"    { UNIT }
-| id as v  { VAR v }
-| digit+ as n { INT (int_of_string n) }
-| eof     { EOF }
+| ws            { token lexbuf }
+| '\n'          { newline lexbuf; token lexbuf }
+| "+"           { PLUS }
+| "-"           { MINUS }
+| "*"           { MUL }
+| "="           { EQUALS }
+| "<>"          { NOTEQUALS }
+| "<"           { LESS }
+| "<="          { LESSEQ }
+| ">"           { GREATER }
+| ">="          { GREATEREQ }
+| "("           { LPAREN }
+| ")"           { RPAREN }
+| "{"           { LCURLY }
+| "}"           { RCURLY }
+| "true"        { TRUE }
+| "false"       { FALSE }
+| "not"         { NOT }
+| "&&"          { AND }
+| "||"          { OR }
+| ","           { COMMA }
+| ":"           { COLON }
+| "."           { DOT }
+| "let"         { LET }
+| "in"          { IN }
+| "if"          { IF }
+| "then"        { THEN }
+| "else"        { ELSE }
+| "_left"       { LEFT }
+| "_right"      { RIGHT }
+| "match"       { MATCH }
+| "with"        { WITH }
+| "|"           { PIPE }
+| "func"        { FUNCTION }
+| "->"          { ARROW }
+| "fst"         { FST }
+| "snd"         { SND }
+| "()"          { UNIT }
+| id as v       { VAR v }
+| digit+ as n   { INT (int_of_string n) }
+| eof           { EOF }

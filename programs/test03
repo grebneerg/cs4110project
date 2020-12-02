@@ -1,0 +1,1 @@
+let s = _left 3 in match s with func x -> x + 1 | func x -> x - 1

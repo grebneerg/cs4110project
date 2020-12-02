@@ -32,8 +32,40 @@ let rec eval_expr (store: value Store.t) = function
     let store' = Store.add s v store in
     eval_expr store' e2
   | MakePair (e1, e2) -> Pair (eval_expr store e1, eval_expr store e2)
-  | MakeRec _ -> failwith "unimp"
+  | Fst e -> begin
+      match eval_expr store e with
+      | Pair (e1, e2) -> e1
+      | _ -> raise IllegalExpression
+    end
+  | Snd e -> begin
+      match eval_expr store e with
+      | Pair (e1, e2) -> e2
+      | _ -> raise IllegalExpression
+    end
+  | MakeRec lst ->
+    List.fold_left
+      (fun (map : Ast.value RecordType.t) (l, e) ->
+         RecordType.add l (eval_expr store e) map)
+      RecordType.empty lst
+    |> fun m -> Record m
+  | RecAccess (e, l) ->
+    e
+    |> eval_expr store
+    |> (function
+        | Record r -> RecordType.find_opt l r
+        | _ -> None)
+    |> (function
+        | Some v -> v
+        | None -> raise IllegalExpression)
   | MakeFunction (s, e) -> Function (s, store, e)
+  | MakeLeft e -> Sum (Left (eval_expr store e))
+  | MakeRight e -> Sum (Right (eval_expr store e))
+  | Match (e1, e2, e3) -> begin
+      match eval_expr store e1 with
+      | Sum (Left v) -> Application (e2, Value v) |> eval_expr store
+      | Sum (Right v)-> Application (e3, Value v) |> eval_expr store 
+      | _ -> raise IllegalValue
+    end
   | Application (e1, e2) -> begin
       match eval_expr store e1 with
       | Function (s, st, e) -> let p = eval_expr store e2 in
