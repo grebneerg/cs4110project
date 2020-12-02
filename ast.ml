@@ -48,7 +48,7 @@ and expr =
   | Snd of expr
   | MakeRec of (string * expr) list
   | RecAccess of expr * string
-  | MakeFunction of (string * expr)
+  | MakeFunction of string * vtype * expr
   | Application of expr * expr
   | If of expr * expr * expr
   | Var of string

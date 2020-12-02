@@ -57,7 +57,7 @@ let rec eval_expr (store: value Store.t) = function
     |> (function
         | Some v -> v
         | None -> raise IllegalExpression)
-  | MakeFunction (s, e) -> Function (s, store, e)
+  | MakeFunction (s, _, e) -> Function (s, store, e)
   | MakeLeft e -> Sum (Left (eval_expr store e))
   | MakeRight e -> Sum (Right (eval_expr store e))
   | Match (e1, e2, e3) -> begin

@@ -76,6 +76,10 @@ rule token = parse
 | "fst"         { FST }
 | "snd"         { SND }
 | "()"          { UNIT }
+| "unit"        { TUNIT }
+| "int"         { TINT }
+| "bool"        { TBOOL }
+| "char"        { TCHAR }
 | id as v       { VAR v }
 | digit+ as n   { INT (int_of_string n) }
 | eof           { EOF }
