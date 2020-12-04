@@ -13,8 +13,15 @@ let rec type_of_value = function
   | Function _ -> failwith "unimplemented"
   | Sum _ -> failwith "unimplemented"
 
+let dealias aliases = function
+  | TAlias s -> (match Store.find_opt s aliases with
+      | Some t -> t
+      | None -> failwith "Undefined alias")
+  | t -> t
 
-let rec typecheck store = function
+let rec typecheck aliases store e =
+  let typecheck store e = typecheck aliases store e in
+  match e with
   | Let (s, e1, e2) -> let store' = Store.add s (typecheck store e1) store in
     typecheck store' e2
   | MakePair (e1, e2) -> TPair(typecheck store e1, typecheck store e2)
@@ -34,9 +41,16 @@ let rec typecheck store = function
           | None -> failwith "invalid record field")
       | _ -> failwith "Not a record")
   | MakeFunction (s, t, e) ->
+    let t = dealias aliases t in
     let store' = Store.add s t store in TFunction (t, typecheck store' e)
-  | MakeLeft (t1, t2, e) -> if t1 = typecheck store e then TSum (t1, t2) else failwith "incorrect left type"
-  | MakeRight (t1, t2, e) -> if t2 = typecheck store e then TSum (t1, t2) else failwith "incorrect right type"
+  | MakeLeft (t1, t2, e) ->
+    let t1 = dealias aliases t1 in
+    let t2 = dealias aliases t2 in
+    if t1 = typecheck store e then TSum (t1, t2) else failwith "incorrect left type"
+  | MakeRight (t1, t2, e) -> 
+    let t1 = dealias aliases t1 in 
+    let t2 = dealias aliases t2 in 
+    if t2 = typecheck store e then TSum (t1, t2) else failwith "incorrect right type"
   | Match (e1, e2, e3) ->
     (match typecheck store e1, typecheck store e2, typecheck store e3 with
      | TSum(ta, tb), TFunction (t2, t3), TFunction (t4, t5)
@@ -75,6 +89,7 @@ let rec typecheck store = function
     | None -> failwith "No var in scope"
 
 let typecheck_program (defs, e) =
-  let store = List.fold_left (fun acc d -> match d with
-      | DVal (l, e) -> Store.add l (typecheck acc e) acc
-      | DType _ -> acc) Store.empty defs in typecheck store e
+  let (aliases, store) = List.fold_left (fun (a, v) d -> match d with
+      | DVal (l, e) -> (a, Store.add l (typecheck a v e) v)
+      | DType (l, t) -> (Store.add l t a, v)) (Store.empty, Store.empty) defs in
+  typecheck aliases store e
