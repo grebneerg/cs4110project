@@ -1,1 +1,1 @@
-let s = _right 3 in match s with func x -> x + 1 | func x -> x - 1
+let s = _right(bool + int) 3 in match s with func x: bool -> if x then 1 else 2 | func x: int -> x + 1

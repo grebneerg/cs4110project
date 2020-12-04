@@ -57,8 +57,8 @@ and expr =
   | BinOp of binop * expr * expr
   | UnOp of unop * expr
   | Match of expr * expr * expr
-  | MakeLeft of expr
-  | MakeRight of expr
+  | MakeLeft of vtype * vtype * expr
+  | MakeRight of vtype * vtype * expr
 
 type def =
   | DVal of string * expr

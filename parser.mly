@@ -59,8 +59,8 @@ expr : LET VAR EQUALS expr IN expr          { Let ($2, $4, $6) }
      | expr DOT VAR                         { RecAccess ($1, $3) }
      | expr binop expr                      { BinOp ($2, $1, $3) }
      | FUNCTION VAR COLON vtype ARROW expr  { MakeFunction ($2, $4, $6) }
-     | LEFT expr                            { MakeLeft $2 }
-     | RIGHT expr                           { MakeRight $2 }
+     | LEFT LPAREN vtype PLUS vtype RPAREN expr                            { MakeLeft ($3, $5, $7) }
+     | RIGHT LPAREN vtype PLUS vtype RPAREN expr                           { MakeRight ($3, $5, $7) }
      | MATCH expr WITH expr PIPE expr       { Match ($2, $4, $6) }
 
 value : INT                                 { Int $1 }

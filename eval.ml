@@ -58,8 +58,8 @@ let rec eval_expr (store: value Store.t) = function
         | Some v -> v
         | None -> raise IllegalExpression)
   | MakeFunction (s, _, e) -> Function (s, store, e)
-  | MakeLeft e -> Sum (Left (eval_expr store e))
-  | MakeRight e -> Sum (Right (eval_expr store e))
+  | MakeLeft (_, _, e) -> Sum (Left (eval_expr store e))
+  | MakeRight (_, _, e) -> Sum (Right (eval_expr store e))
   | Match (e1, e2, e3) -> begin
       match eval_expr store e1 with
       | Sum (Left v) -> Application (e2, Value v) |> eval_expr store

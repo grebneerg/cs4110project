@@ -1,1 +1,1 @@
-let s = _left 3 in match s with func x -> x + 1 | func x -> x - 1
+let s = _left(int + unit) 3 in match s with func x: int -> x = 1 | func x: unit -> false

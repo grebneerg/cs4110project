@@ -34,12 +34,12 @@ let rec typecheck store = function
       | _ -> failwith "Not a record")
   | MakeFunction (s, t, e) ->
     let store' = Store.add s t store in TFunction (t, typecheck store' e)
-  | MakeLeft e -> failwith "un"
-  | MakeRight e -> failwith "un"
+  | MakeLeft (t1, t2, e) -> if t1 = typecheck store e then TSum (t1, t2) else failwith "incorrect left type"
+  | MakeRight (t1, t2, e) -> if t2 = typecheck store e then TSum (t1, t2) else failwith "incorrect right type"
   | Match (e1, e2, e3) ->
     (match typecheck store e1, typecheck store e2, typecheck store e3 with
-     | t1, TFunction (t2, t3), TFunction (t4, t5)
-       when t1 = t2 && t1 = t4 && t3 = t5 -> t4
+     | TSum(ta, tb), TFunction (t2, t3), TFunction (t4, t5)
+       when ta = t2 && tb = t4 && t3 = t5 -> t5
      | _ -> failwith "Bad match types")
   | Application (e1, e2) -> (match typecheck store e1, typecheck store e2 with
       | TFunction (t1, t2), t3 when t1 = t3 -> t2
