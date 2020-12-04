@@ -13,6 +13,7 @@ let rec type_of_value = function
   | Function _ -> failwith "unimplemented"
   | Sum _ -> failwith "unimplemented"
 
+
 let rec typecheck store = function
   | Let (s, e1, e2) -> let store' = Store.add s (typecheck store e1) store in
     typecheck store' e2
@@ -73,3 +74,7 @@ let rec typecheck store = function
     | Some t -> t
     | None -> failwith "No var in scope"
 
+let typecheck_program (defs, e) =
+  let store = List.fold_left (fun acc d -> match d with
+      | DVal (l, e) -> Store.add l (typecheck acc e) acc
+      | DType _ -> acc) Store.empty defs in typecheck store e

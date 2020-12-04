@@ -60,6 +60,7 @@ rule token = parse
 | "||"          { OR }
 | ","           { COMMA }
 | ":"           { COLON }
+| ";"           { SEMICOLON }
 | "."           { DOT }
 | "let"         { LET }
 | "in"          { IN }
@@ -80,6 +81,7 @@ rule token = parse
 | "int"         { TINT }
 | "bool"        { TBOOL }
 | "char"        { TCHAR }
+| "type"        { TYPE }
 | id as v       { VAR v }
 | digit+ as n   { INT (int_of_string n) }
 | eof           { EOF }

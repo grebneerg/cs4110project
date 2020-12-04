@@ -7,7 +7,6 @@ let () =
   |> open_in
   |> Lexing.from_channel 
   |> Parser.program Lexer.token
-  |> snd
-  |> typecheck Ast.Store.empty
+  |> typecheck_program
   |> string_of_type
   |> print_endline

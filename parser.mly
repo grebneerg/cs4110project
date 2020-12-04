@@ -8,10 +8,11 @@ open Lexing
 %token <string> VAR
 %token UNIT
 %token TINT TBOOL TCHAR TUNIT
-%token LPAREN RPAREN LCURLY RCURLY COMMA COLON EQUALS DOT
+%token LPAREN RPAREN LCURLY RCURLY COMMA COLON EQUALS DOT SEMICOLON
 %token TRUE FALSE NOTEQUALS LESS LESSEQ GREATER GREATEREQ NOT AND OR PLUS MINUS MUL
 %token LET IN
 %token FUNCTION ARROW
+%token TYPE
 %token IF
 %token THEN
 %token ELSE
@@ -24,6 +25,7 @@ open Lexing
 %type <Ast.unop> unop
 %type <Ast.expr> expr
 %type <Ast.vtype> vtype
+%type <Ast.def> def
 %type <Ast.program> program
 
 
@@ -80,9 +82,13 @@ vtype : TINT                                { TInt }
      | vtype MUL vtype                      { TPair ($1, $3) }
      | vtype ARROW vtype                    { TFunction ($1, $3) }
      | LCURLY trec RCURLY                   { TRecord $2 }
+     | VAR                                  { TAlias ($1) }
 
 trec : VAR COLON vtype COMMA trec            { RecordType.add $1 $3 $5 }
      | VAR COLON vtype                       { RecordType.add $1 $3 RecordType.empty }
 
+def : LET VAR EQUALS expr SEMICOLON      { DVal ($2, $4) }
+    | TYPE VAR EQUALS vtype SEMICOLON    { DType ($2, $4) }
 
-program: expr EOF                       { ([], $1) }
+program : def program                    { let p = $2 in ($1 :: (fst p), snd p)}
+        | expr EOF                       { ([], $1) }

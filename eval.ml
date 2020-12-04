@@ -85,4 +85,7 @@ let rec eval_expr (store: value Store.t) = function
     | None -> raise UndefinedVar
     | Some value -> value
 
-let rec eval_program (defs, e) = eval_expr Store.empty e
+let rec eval_program (defs, e) =
+  let store = List.fold_left (fun acc d -> match d with
+      | DVal (l, e) -> Store.add l (eval_expr acc e) acc
+      | DType _ -> acc) Store.empty defs in eval_expr store e

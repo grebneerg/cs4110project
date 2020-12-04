@@ -12,6 +12,7 @@ type vtype =
   | TRecord of vtype RecordType.t
   | TFunction of vtype * vtype
   | TSum of vtype * vtype
+  | TAlias of string
 
 type binop =
   | Eq 
