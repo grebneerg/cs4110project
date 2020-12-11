@@ -79,6 +79,11 @@ let rec typecheck aliases store e =
           | TBool, TBool -> TBool
           | _ -> failwith "Wrong binop type, expected bool")
     end
+  | Import s -> let p = s
+                        |> open_in
+                        |> Lexing.from_channel 
+                        |> Parser.program Lexer.token in
+    TRecord (p |> fst |> def_types |> snd)
   | UnOp (uop, e) -> let t1 = typecheck store e in
     begin 
       match uop with 
@@ -88,8 +93,10 @@ let rec typecheck aliases store e =
     | Some t -> t
     | None -> failwith "No var in scope"
 
+and def_types defs = List.fold_left (fun (a, v) d -> match d with
+    | DVal (l, e) -> (a, Store.add l (typecheck a v e) v)
+    | DType (l, t) -> (Store.add l t a, v)) (Store.empty, Store.empty) defs
+
 let typecheck_program (defs, e) =
-  let (aliases, store) = List.fold_left (fun (a, v) d -> match d with
-      | DVal (l, e) -> (a, Store.add l (typecheck a v e) v)
-      | DType (l, t) -> (Store.add l t a, v)) (Store.empty, Store.empty) defs in
+  let (aliases, store) = def_types defs in
   typecheck aliases store e

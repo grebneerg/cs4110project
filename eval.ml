@@ -1,4 +1,5 @@
 open Ast
+open Check
 
 exception IllegalExpression
 exception IllegalValue
@@ -77,6 +78,11 @@ let rec eval_expr (store: value Store.t) = function
       | Bool b -> if b then eval_expr store e2 else eval_expr store e3
       | _ -> raise IllegalValue
     end
+  | Import s -> let p = s
+                        |> open_in
+                        |> Lexing.from_channel 
+                        |> Parser.program Lexer.token in
+    typecheck_program p; Record (eval_defs (fst p))
   | Value v -> v
   | BinOp (bop, e1, e2) ->
     eval_binop bop (eval_expr store e1) (eval_expr store e2)
@@ -84,8 +90,9 @@ let rec eval_expr (store: value Store.t) = function
   | Var v -> match Store.find_opt v store with
     | None -> raise UndefinedVar
     | Some value -> value
+and eval_defs defs = List.fold_left (fun acc d -> match d with
+    | DVal (l, e) -> Store.add l (eval_expr acc e) acc
+    | DType _ -> acc) Store.empty defs
 
-let rec eval_program (defs, e) =
-  let store = List.fold_left (fun acc d -> match d with
-      | DVal (l, e) -> Store.add l (eval_expr acc e) acc
-      | DType _ -> acc) Store.empty defs in eval_expr store e
+let eval_program (defs, e) =
+  let store = eval_defs defs in eval_expr store e

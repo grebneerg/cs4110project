@@ -60,6 +60,7 @@ and expr =
   | Match of expr * expr * expr
   | MakeLeft of vtype * vtype * expr
   | MakeRight of vtype * vtype * expr
+  | Import of string
 
 type def =
   | DVal of string * expr

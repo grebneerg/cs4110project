@@ -36,6 +36,7 @@ let error lexbuf msg =
 let digit = ['-']?['0'-'9']
 let id = ['a'-'z'] ['a'-'z' '0'-'9']*
 let ws = [' ' '\t']
+let path = ['/']?(_+'/')*_+
 
 rule token = parse 
 | ws            { token lexbuf }
@@ -53,6 +54,7 @@ rule token = parse
 | ")"           { RPAREN }
 | "{"           { LCURLY }
 | "}"           { RCURLY }
+| "import"      { IMPORT }
 | "true"        { TRUE }
 | "false"       { FALSE }
 | "not"         { NOT }
@@ -85,3 +87,4 @@ rule token = parse
 | id as v       { VAR v }
 | digit+ as n   { INT (int_of_string n) }
 | eof           { EOF }
+| '"' (path as p) '"'     { FILEPATH p }

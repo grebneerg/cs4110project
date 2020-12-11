@@ -6,6 +6,7 @@ open Lexing
 %token <int> INT
 %token <char> CHAR
 %token <string> VAR
+%token <string> FILEPATH
 %token UNIT
 %token TINT TBOOL TCHAR TUNIT
 %token LPAREN RPAREN LCURLY RCURLY COMMA COLON EQUALS DOT SEMICOLON
@@ -14,6 +15,7 @@ open Lexing
 %token FUNCTION ARROW
 %token TYPE
 %token IF
+%token IMPORT
 %token THEN
 %token ELSE
 %token LEFT RIGHT MATCH WITH PIPE
@@ -64,6 +66,7 @@ expr : LET VAR EQUALS expr IN expr          { Let ($2, $4, $6) }
      | LEFT LPAREN vtype PLUS vtype RPAREN expr                            { MakeLeft ($3, $5, $7) }
      | RIGHT LPAREN vtype PLUS vtype RPAREN expr                           { MakeRight ($3, $5, $7) }
      | MATCH expr WITH expr PIPE expr       { Match ($2, $4, $6) }
+     | IMPORT LPAREN FILEPATH RPAREN        { Import $3 }
 
 value : INT                                 { Int $1 }
       | TRUE                                { Bool true }

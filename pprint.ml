@@ -14,6 +14,7 @@ let rec string_of_type = function
       (fun l t acc -> (sprintf "%s: %s" l (string_of_type t)) :: acc) r []
     |> String.concat ", "
     |> sprintf "{%s}"
+  
 
 let string_of_binop = function
   | Eq -> "="
