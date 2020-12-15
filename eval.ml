@@ -82,7 +82,7 @@ let rec eval_expr (store: value Store.t) = function
                         |> open_in
                         |> Lexing.from_channel 
                         |> Parser.program Lexer.token in
-    typecheck_program p; Record (eval_defs (fst p))
+    typecheck_program p |> ignore; Record (p |> fst |> eval_defs)
   | Value v -> v
   | BinOp (bop, e1, e2) ->
     eval_binop bop (eval_expr store e1) (eval_expr store e2)

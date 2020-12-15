@@ -10,7 +10,8 @@ open Lexing
 %token UNIT
 %token TINT TBOOL TCHAR TUNIT
 %token LPAREN RPAREN LCURLY RCURLY COMMA COLON EQUALS DOT SEMICOLON
-%token TRUE FALSE NOTEQUALS LESS LESSEQ GREATER GREATEREQ NOT AND OR PLUS MINUS MUL
+%token TRUE FALSE NOTEQUALS LESS LESSEQ GREATER GREATEREQ NOT AND MUL
+%token OR PLUS MINUS
 %token LET IN
 %token FUNCTION ARROW
 %token TYPE
@@ -49,25 +50,28 @@ binop : EQUALS                              { Eq }
       | MINUS                               { Sub }
       | MUL                                 { Mul }
 
-expr : LET VAR EQUALS expr IN expr          { Let ($2, $4, $6) }
+uexpr : VAR                                 { Var $1 }
+      | expr DOT VAR                      { RecAccess ($1, $3) }
+      | LPAREN expr RPAREN                { $2 }
+      | value                               { Value $1 }
+
+expr : LET VAR EQUALS expr IN expr        { Let ($2, $4, $6) }
      | unop expr                            { UnOp ($1, $2) }
-     | value                                { Value $1 }
-     | VAR                                  { Var $1 }
-     | expr expr                            { Application ($1, $2) }
      | IF expr THEN expr ELSE expr          { If ($2, $4, $6) }
      | LPAREN expr COMMA expr RPAREN        { MakePair ($2, $4) }
      | FST expr                             { Fst $2 }
      | SND expr                             { Snd $2 }
-     | LPAREN expr RPAREN                   { $2 }
      | LCURLY record RCURLY                 { MakeRec $2 }
-     | expr DOT VAR                         { RecAccess ($1, $3) }
      | expr binop expr                      { BinOp ($2, $1, $3) }
      | FUNCTION VAR COLON vtype ARROW expr  { MakeFunction ($2, $4, $6) }
      | LEFT LPAREN vtype PLUS vtype RPAREN expr                            { MakeLeft ($3, $5, $7) }
      | RIGHT LPAREN vtype PLUS vtype RPAREN expr                           { MakeRight ($3, $5, $7) }
      | MATCH expr WITH expr PIPE expr       { Match ($2, $4, $6) }
      | IMPORT LPAREN FILEPATH RPAREN        { Import $3 }
+     | expr uexpr                           { Application ($1, $2) }
+     | uexpr                                { $1 }
 
+     
 value : INT                                 { Int $1 }
       | TRUE                                { Bool true }
       | FALSE                               { Bool false }
@@ -78,17 +82,17 @@ record : VAR COLON expr COMMA record        { ($1, $3) :: $5 }
        | VAR COLON expr                     { ($1, $3) :: [] }
 
 vtype : TINT                                { TInt }
-     | TUNIT                                { TUnit }
-     | TBOOL                                { TBool }
-     | TCHAR                                { TChar }
-     | vtype PLUS vtype                     { TSum ($1, $3) }
-     | vtype MUL vtype                      { TPair ($1, $3) }
-     | vtype ARROW vtype                    { TFunction ($1, $3) }
-     | LCURLY trec RCURLY                   { TRecord $2 }
-     | VAR                                  { TAlias ($1) }
-
-trec : VAR COLON vtype COMMA trec            { RecordType.add $1 $3 $5 }
-     | VAR COLON vtype                       { RecordType.add $1 $3 RecordType.empty }
+      | TUNIT                               { TUnit }
+      | TBOOL                               { TBool }
+      | TCHAR                               { TChar }
+      | vtype PLUS vtype                    { TSum ($1, $3) }
+      | vtype MUL vtype                     { TPair ($1, $3) }
+      | vtype ARROW vtype                   { TFunction ($1, $3) }
+      | LCURLY trec RCURLY                  { TRecord $2 }
+      | VAR                                 { TAlias ($1) }
+      
+trec : VAR COLON vtype COMMA trec           { RecordType.add $1 $3 $5 }
+     | VAR COLON vtype                      { RecordType.add $1 $3 RecordType.empty }
 
 def : LET VAR EQUALS expr SEMICOLON      { DVal ($2, $4) }
     | TYPE VAR EQUALS vtype SEMICOLON    { DType ($2, $4) }

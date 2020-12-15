@@ -1,0 +1,2 @@
+let t1 = import("programs/test01");
+t1.y 7

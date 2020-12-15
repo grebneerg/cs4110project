@@ -1,0 +1,2 @@
+let t2 = import("programs/test02");
+t2.f 1 2
