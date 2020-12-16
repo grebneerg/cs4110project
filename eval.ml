@@ -61,7 +61,7 @@ let rec eval_expr (store: value Store.t) = function
   | MakeFunction (s, _, e) -> Function (s, store, e)
   | MakeLeft (_, _, e) -> Sum (Left (eval_expr store e))
   | MakeRight (_, _, e) -> Sum (Right (eval_expr store e))
-  | Match (e1, e2, e3) -> begin
+  | Case (e1, e2, e3) -> begin
       match eval_expr store e1 with
       | Sum (Left v) -> Application (e2, Value v) |> eval_expr store
       | Sum (Right v)-> Application (e3, Value v) |> eval_expr store 
@@ -90,6 +90,7 @@ let rec eval_expr (store: value Store.t) = function
   | Var v -> match Store.find_opt v store with
     | None -> raise UndefinedVar
     | Some value -> value
+  | Match (e, lst) -> failwith "unimplemented"
 and eval_defs defs = List.fold_left (fun acc d -> match d with
     | DVal (l, e) -> Store.add l (eval_expr acc e) acc
     | DType _ -> acc) Store.empty defs

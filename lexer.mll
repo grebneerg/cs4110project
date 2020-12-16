@@ -73,6 +73,8 @@ rule token = parse
 | "_right"      { RIGHT }
 | "match"       { MATCH }
 | "with"        { WITH }
+| "case"        { CASE }
+| "of"          { OF }
 | "|"           { PIPE }
 | "func"        { FUNCTION }
 | "->"          { ARROW }

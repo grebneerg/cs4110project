@@ -51,7 +51,7 @@ let rec typecheck aliases store e =
     let t1 = dealias aliases t1 in 
     let t2 = dealias aliases t2 in 
     if t2 = typecheck store e then TSum (t1, t2) else failwith "incorrect right type"
-  | Match (e1, e2, e3) ->
+  | Case (e1, e2, e3) ->
     (match typecheck store e1, typecheck store e2, typecheck store e3 with
      | TSum(ta, tb), TFunction (t2, t3), TFunction (t4, t5)
        when ta = t2 && tb = t4 && t3 = t5 -> t5

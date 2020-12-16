@@ -1,2 +1,2 @@
 type u = unit;
-let s = _left(int + u) 3 in match s with func x: int -> x = 1 | func x: unit -> false
+let s = _left(int + u) 3 in case s of func x: int -> x = 1 | func x: unit -> false

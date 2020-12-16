@@ -2,6 +2,15 @@ module RecordType = Map.Make(String)
 module Store = Map.Make(String)
 (* module Modules = Map.Make(String) *)
 
+type pat = 
+  | PUnit
+  | PWild
+  | PInt of int
+  | PBool of bool
+  | PChar of char
+  | PVar of string
+  | PPair of pat * pat
+  | PRecord of pat RecordType.t
 
 type vtype =
   | TUnit
@@ -13,6 +22,7 @@ type vtype =
   | TFunction of vtype * vtype
   | TSum of vtype * vtype
   | TAlias of string
+  (* | TRecursive of  *)
 
 type binop =
   | Eq 
@@ -57,10 +67,11 @@ and expr =
   | Value of value
   | BinOp of binop * expr * expr
   | UnOp of unop * expr
-  | Match of expr * expr * expr
+  | Case of expr * expr * expr
   | MakeLeft of vtype * vtype * expr
   | MakeRight of vtype * vtype * expr
   | Import of string
+  | Match of expr * (pat * expr) list
 
 type def =
   | DVal of string * expr

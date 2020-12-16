@@ -7,7 +7,7 @@ open Lexing
 %token <char> CHAR
 %token <string> VAR
 %token <string> FILEPATH
-%token UNIT
+%token UNIT WILDCARD
 %token TINT TBOOL TCHAR TUNIT
 %token LPAREN RPAREN LCURLY RCURLY COMMA COLON EQUALS DOT SEMICOLON
 %token TRUE FALSE NOTEQUALS LESS LESSEQ GREATER GREATEREQ NOT AND MUL
@@ -19,10 +19,11 @@ open Lexing
 %token IMPORT
 %token THEN
 %token ELSE
-%token LEFT RIGHT MATCH WITH PIPE
+%token LEFT RIGHT CASE OF MATCH WITH PIPE
 %token FST SND
 %token EOF
 
+%type <Ast.pat> pat
 %type <Ast.value> value
 %type <Ast.binop> binop
 %type <Ast.unop> unop
@@ -51,8 +52,8 @@ binop : EQUALS                              { Eq }
       | MUL                                 { Mul }
 
 uexpr : VAR                                 { Var $1 }
-      | expr DOT VAR                      { RecAccess ($1, $3) }
-      | LPAREN expr RPAREN                { $2 }
+      | expr DOT VAR                        { RecAccess ($1, $3) }
+      | LPAREN expr RPAREN                  { $2 }
       | value                               { Value $1 }
 
 expr : LET VAR EQUALS expr IN expr        { Let ($2, $4, $6) }
@@ -66,17 +67,32 @@ expr : LET VAR EQUALS expr IN expr        { Let ($2, $4, $6) }
      | FUNCTION VAR COLON vtype ARROW expr  { MakeFunction ($2, $4, $6) }
      | LEFT LPAREN vtype PLUS vtype RPAREN expr                            { MakeLeft ($3, $5, $7) }
      | RIGHT LPAREN vtype PLUS vtype RPAREN expr                           { MakeRight ($3, $5, $7) }
-     | MATCH expr WITH expr PIPE expr       { Match ($2, $4, $6) }
+     | CASE expr OF expr PIPE expr          { Case ($2, $4, $6) }
+     | MATCH expr WITH case                 { Match ($2, $4) }
      | IMPORT LPAREN FILEPATH RPAREN        { Import $3 }
      | expr uexpr                           { Application ($1, $2) }
      | uexpr                                { $1 }
 
-     
 value : INT                                 { Int $1 }
       | TRUE                                { Bool true }
       | FALSE                               { Bool false }
       | CHAR                                { Char $1 }
       | UNIT                                { Unit }
+
+
+bpat : WILDCARD                             { PWild }
+     | LPAREN RPAREN                        { PUnit }
+     | INT                                  { PInt $1 }
+     | TRUE                                 { PBool true }
+     | FALSE                                { PBool false }
+     | CHAR                                 { PChar $1 }
+
+pat  : bpat                                 { $1 }
+     | VAR                                  { PVar $1 }
+     | LPAREN pat COMMA pat RPAREN          { PPair ($2, $4)}
+
+case : PIPE pat ARROW expr                  { ($2, $4) }
+     
 
 record : VAR COLON expr COMMA record        { ($1, $3) :: $5 }
        | VAR COLON expr                     { ($1, $3) :: [] }
