@@ -19,7 +19,7 @@ open Lexing
 %token IMPORT
 %token THEN
 %token ELSE
-%token LEFT RIGHT CASE OF MATCH WITH PIPE
+%token LEFT RIGHT CASE OF MATCH WITH PIPE BEGIN END
 %token FST SND
 %token EOF
 
@@ -67,8 +67,8 @@ expr : LET VAR EQUALS expr IN expr        { Let ($2, $4, $6) }
      | FUNCTION VAR COLON vtype ARROW expr  { MakeFunction ($2, $4, $6) }
      | LEFT LPAREN vtype PLUS vtype RPAREN expr                            { MakeLeft ($3, $5, $7) }
      | RIGHT LPAREN vtype PLUS vtype RPAREN expr                           { MakeRight ($3, $5, $7) }
+     | MATCH expr WITH case END             { Match ($2, $4) }
      | CASE expr OF expr PIPE expr          { Case ($2, $4, $6) }
-     | MATCH expr WITH case                 { Match ($2, $4) }
      | IMPORT LPAREN FILEPATH RPAREN        { Import $3 }
      | expr uexpr                           { Application ($1, $2) }
      | uexpr                                { $1 }
@@ -91,8 +91,8 @@ pat  : bpat                                 { $1 }
      | VAR                                  { PVar $1 }
      | LPAREN pat COMMA pat RPAREN          { PPair ($2, $4)}
 
-case : PIPE pat ARROW expr                  { ($2, $4) }
-     
+case : PIPE pat ARROW expr case             { ($2, $4) :: $5 }
+     | PIPE pat ARROW expr                  { ($2, $4) :: [] }
 
 record : VAR COLON expr COMMA record        { ($1, $3) :: $5 }
        | VAR COLON expr                     { ($1, $3) :: [] }
@@ -110,8 +110,8 @@ vtype : TINT                                { TInt }
 trec : VAR COLON vtype COMMA trec           { RecordType.add $1 $3 $5 }
      | VAR COLON vtype                      { RecordType.add $1 $3 RecordType.empty }
 
-def : LET VAR EQUALS expr SEMICOLON      { DVal ($2, $4) }
-    | TYPE VAR EQUALS vtype SEMICOLON    { DType ($2, $4) }
+def : LET VAR EQUALS expr SEMICOLON         { DVal ($2, $4) }
+    | TYPE VAR EQUALS vtype SEMICOLON       { DType ($2, $4) }
 
-program : def program                    { let p = $2 in ($1 :: (fst p), snd p)}
-        | expr EOF                       { ([], $1) }
+program : def program                       { let p = $2 in ($1 :: (fst p), snd p)}
+        | expr EOF                          { ([], $1) }

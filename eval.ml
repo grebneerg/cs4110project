@@ -84,13 +84,13 @@ let rec eval_expr (store: value Store.t) = function
                         |> Parser.program Lexer.token in
     typecheck_program p |> ignore; Record (p |> fst |> eval_defs)
   | Value v -> v
+  | Match (e, lst) -> failwith "unimplemented"
   | BinOp (bop, e1, e2) ->
     eval_binop bop (eval_expr store e1) (eval_expr store e2)
   | UnOp (uop, e) -> eval_unop uop (eval_expr store e)
   | Var v -> match Store.find_opt v store with
     | None -> raise UndefinedVar
     | Some value -> value
-  | Match (e, lst) -> failwith "unimplemented"
 and eval_defs defs = List.fold_left (fun acc d -> match d with
     | DVal (l, e) -> Store.add l (eval_expr acc e) acc
     | DType _ -> acc) Store.empty defs
