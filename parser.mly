@@ -56,7 +56,7 @@ uexpr : VAR                                 { Var $1 }
       | LPAREN expr RPAREN                  { $2 }
       | value                               { Value $1 }
 
-expr : LET VAR EQUALS expr IN expr        { Let ($2, $4, $6) }
+expr : LET pat EQUALS expr IN expr        { Let ($2, $4, $6) }
      | unop expr                            { UnOp ($1, $2) }
      | IF expr THEN expr ELSE expr          { If ($2, $4, $6) }
      | LPAREN expr COMMA expr RPAREN        { MakePair ($2, $4) }
@@ -110,8 +110,8 @@ vtype : TINT                                { TInt }
 trec : VAR COLON vtype COMMA trec           { RecordType.add $1 $3 $5 }
      | VAR COLON vtype                      { RecordType.add $1 $3 RecordType.empty }
 
-def : LET VAR EQUALS expr SEMICOLON         { DVal ($2, $4) }
-    | TYPE VAR EQUALS vtype SEMICOLON       { DType ($2, $4) }
+def : LET pat EQUALS expr SEMICOLON         { DVal ($2, $4) }
+    | TYPE pat EQUALS vtype SEMICOLON       { DType ($2, $4) }
 
 program : def program                       { let p = $2 in ($1 :: (fst p), snd p)}
         | expr EOF                          { ([], $1) }

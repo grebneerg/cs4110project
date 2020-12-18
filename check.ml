@@ -1,5 +1,8 @@
 open Ast
 
+let update_store store store' = 
+  Store.fold (fun k v acc -> Store.add k v acc) store store'
+
 let rec type_of_value = function
   | Int _ -> TInt
   | Bool _ -> TBool
@@ -22,8 +25,8 @@ let dealias aliases = function
 let rec typecheck aliases store e =
   let typecheck store e = typecheck aliases store e in
   match e with
-  | Let (s, e1, e2) -> let store' = Store.add s (typecheck store e1) store in
-    typecheck store' e2
+  | Let (p, e1, e2) -> failwith "unimplemented" (** let store' = Store.add s (typecheck store e1) store in
+                                                    typecheck store' e2 *)
   | MakePair (e1, e2) -> TPair(typecheck store e1, typecheck store e2)
   | Fst e -> (match typecheck store e with
       | TPair (t1, _) -> t1
@@ -89,13 +92,15 @@ let rec typecheck aliases store e =
       match uop with 
       | Not -> if t1 = TBool then TBool else failwith "wrong unop type"
     end 
-  | Var v -> match Store.find_opt v store with
-    | Some t -> t
-    | None -> failwith "No var in scope"
+  | Var v -> begin match Store.find_opt v store with
+      | Some t -> t
+      | None -> failwith "No var in scope"
+    end
+  | Match (p, e) -> failwith "unimplemented"
 
 and def_types defs = List.fold_left (fun (a, v) d -> match d with
-    | DVal (l, e) -> (a, Store.add l (typecheck a v e) v)
-    | DType (l, t) -> (Store.add l t a, v)) (Store.empty, Store.empty) defs
+    | DVal (l, e) -> failwith "unimplemented"
+    | DType (l, t) -> failwith "unimplemented") (Store.empty, Store.empty) defs
 
 let typecheck_program (defs, e) =
   let (aliases, store) = def_types defs in

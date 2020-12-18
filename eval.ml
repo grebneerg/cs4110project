@@ -6,6 +6,52 @@ exception IllegalValue
 exception UndefinedVar
 exception IllegalBinop
 exception IllegalUnop
+exception NotExaustive
+
+let update_store store store' = 
+  Store.fold (fun k v acc -> Store.add k v acc) store store'
+
+let rec same_pattern p v = 
+  match p,v with
+  | PUnit, Unit -> true
+  | PWild, _ -> true
+  | PBool b1, Bool b2 -> if b1 = b2 then true else false
+  | PInt i1, Int i2 -> if i1 = i2 then true else false 
+  | PChar c1, Char c2 -> if c1 = c2 then true else false
+  | PVar v, _ -> true
+  | PPair (a1, a2), Pair (b1, b2) -> same_pattern a1 b1 && same_pattern a2 b2
+  | _ -> false
+
+let rec bind_pattern (p : pat) (v : value) : value Store.t option =
+  if not (same_pattern p v) then None else 
+    match p,v with
+    | PUnit, Unit -> Some (Store.empty)
+    | PWild, _ -> Some (Store.empty)
+    | PBool b1, Bool b2 -> Some (Store.empty)
+    | PInt i1, Int i2 -> Some (Store.empty)
+    | PChar c1, Char c2 ->  Some (Store.empty)
+    | PVar b, _ -> Some (Store.add b v Store.empty)
+    | PPair (a1, a2), Pair (b1, b2) -> Some (multi_bind a1 a2 b1 b2)
+    | _ -> None
+and 
+  multi_bind a1 a2 b1 b2 =
+  let x = (bind_pattern a1 b1) in
+  let y = (bind_pattern a2 b2) in
+  begin match x with
+    | Some s -> 
+      begin 
+        match y with 
+        | Some s' -> update_store s s'
+        | None -> s
+      end
+    | None -> 
+      begin
+        match y with 
+        | Some s' -> s'
+        | None -> Store.empty
+      end
+  end 
+
 
 let eval_unop unop v1 = 
   match unop, v1 with
@@ -27,11 +73,15 @@ let eval_binop bop v1 v2 =
   | Or, Bool b1, Bool b2 -> Bool (b1 || b2)
   | _ -> raise IllegalBinop
 
-
 let rec eval_expr (store: value Store.t) = function
-  | Let (s, e1, e2) -> let v = eval_expr store e1 in
-    let store' = Store.add s v store in
-    eval_expr store' e2
+  | Let (p, e1, e2) -> let v = eval_expr store e1 in
+    let store' = 
+      begin
+        match bind_pattern p v with 
+        | Some s -> s
+        | None -> failwith "no bindings"
+      end in
+    eval_expr (update_store store store') e2
   | MakePair (e1, e2) -> Pair (eval_expr store e1, eval_expr store e2)
   | Fst e -> begin
       match eval_expr store e with
@@ -84,15 +134,33 @@ let rec eval_expr (store: value Store.t) = function
                         |> Parser.program Lexer.token in
     typecheck_program p |> ignore; Record (p |> fst |> eval_defs)
   | Value v -> v
-  | Match (e, lst) -> failwith "unimplemented"
+  | Match (e, lst) -> eval_match store e lst
   | BinOp (bop, e1, e2) ->
     eval_binop bop (eval_expr store e1) (eval_expr store e2)
   | UnOp (uop, e) -> eval_unop uop (eval_expr store e)
   | Var v -> match Store.find_opt v store with
     | None -> raise UndefinedVar
     | Some value -> value
+and eval_match store e lst = 
+  let v = eval_expr store e in 
+  match lst with 
+  | (p, e1)::t -> if same_pattern p v then
+      let store' =
+        begin 
+          match bind_pattern p v with 
+          | Some s -> s
+          | None -> Store.empty
+        end in 
+      eval_expr (update_store store store') e1 
+    else eval_match store e t
+  | _ -> raise NotExaustive
 and eval_defs defs = List.fold_left (fun acc d -> match d with
-    | DVal (l, e) -> Store.add l (eval_expr acc e) acc
+    | DVal (l, e) -> let store' = begin
+        match bind_pattern l (eval_expr acc e) with 
+        | Some s -> s
+        | None -> raise NotExaustive
+      end in
+      update_store acc store'
     | DType _ -> acc) Store.empty defs
 
 let eval_program (defs, e) =

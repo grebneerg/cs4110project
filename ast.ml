@@ -53,7 +53,7 @@ and sum =
   | Left of value
   | Right of value
 and expr = 
-  | Let of string * expr * expr
+  | Let of pat * expr * expr
   | MakePair of expr * expr
   | Fst of expr
   | Snd of expr
@@ -74,7 +74,7 @@ and expr =
   | Match of expr * (pat * expr) list
 
 type def =
-  | DVal of string * expr
-  | DType of string * vtype
+  | DVal of pat * expr
+  | DType of pat * vtype
 
 type program = def list * expr
