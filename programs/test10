@@ -1,2 +1,3 @@
-let x = match (2, (2,4)) with | (1,(2,4)) -> 20 | (2, 3) -> 28 | (2,3) -> 40 | _ -> 10 end in
-x
+let { y, z } = { y: 2, z: 3 };
+let x = match (1, 20) with | (5, 6) -> 40 | (1, x) -> x | _ -> 10 end in
+x + y + z

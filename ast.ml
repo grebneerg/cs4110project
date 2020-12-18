@@ -10,7 +10,7 @@ type pat =
   | PChar of char
   | PVar of string
   | PPair of pat * pat
-  | PRecord of pat RecordType.t
+  | PRecord of string list
 
 type vtype =
   | TUnit
@@ -77,6 +77,6 @@ and expr =
 
 type def =
   | DVal of pat * expr
-  | DType of pat * vtype
+  | DType of string * vtype
 
 type program = def list * expr

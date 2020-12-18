@@ -91,6 +91,10 @@ bpat : WILDCARD                             { PWild }
 pat  : bpat                                 { $1 }
      | VAR                                  { PVar $1 }
      | LPAREN pat COMMA pat RPAREN          { PPair ($2, $4)}
+     | LCURLY str RCURLY                    { PRecord $2 }
+
+str  : VAR COMMA str                        { $1 :: $3 }
+     | VAR                                  { $1 :: [] }
 
 case : PIPE pat ARROW expr case             { ($2, $4) :: $5 }
      | PIPE pat ARROW expr                  { ($2, $4) :: [] }
@@ -113,7 +117,7 @@ trec : VAR COLON vtype COMMA trec           { RecordType.add $1 $3 $5 }
      | VAR COLON vtype                      { RecordType.add $1 $3 RecordType.empty }
 
 def : LET pat EQUALS expr SEMICOLON         { DVal ($2, $4) }
-    | TYPE pat EQUALS vtype SEMICOLON       { DType ($2, $4) }
+    | TYPE VAR EQUALS vtype SEMICOLON       { DType ($2, $4) }
 
 program : def program                       { let p = $2 in ($1 :: (fst p), snd p)}
         | expr EOF                          { ([], $1) }

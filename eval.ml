@@ -6,7 +6,7 @@ exception IllegalValue
 exception UndefinedVar
 exception IllegalBinop
 exception IllegalUnop
-exception NotExaustive
+exception NotExhaustive
 
 let update_store store store' = 
   Store.fold (fun k v acc -> Store.add k v acc) store store'
@@ -20,6 +20,7 @@ let rec same_pattern p v =
   | PChar c1, Char c2 -> if c1 = c2 then true else false
   | PVar v, _ -> true
   | PPair (a1, a2), Pair (b1, b2) -> same_pattern a1 b1 && same_pattern a2 b2
+  | PRecord lst, Record r -> true
   | _ -> false
 
 let rec bind_pattern (p : pat) (v : value) : value Store.t option =
@@ -32,6 +33,12 @@ let rec bind_pattern (p : pat) (v : value) : value Store.t option =
     | PChar c1, Char c2 ->  Some (Store.empty)
     | PVar b, _ -> Some (Store.add b v Store.empty)
     | PPair (a1, a2), Pair (b1, b2) -> Some (multi_bind a1 a2 b1 b2)
+    | PRecord lst, Record r ->
+      List.fold_left (fun acc s ->
+          Option.bind acc (fun store ->
+              RecordType.find_opt s r
+              |> Option.map (fun v -> Store.add s v store)))
+        (Some Store.empty) lst
     | _ -> None
 and 
   multi_bind a1 a2 b1 b2 =
@@ -148,7 +155,7 @@ let rec eval_expr (store: value Store.t) = function
       let rec store' = Store.add v (Lazy (Fix e, store)) s in
       eval_expr store' e'
     | _ -> raise IllegalValue
-    
+
 and eval_match store e lst = 
   let v = eval_expr store e in 
   match lst with 
@@ -161,13 +168,13 @@ and eval_match store e lst =
         end in 
       eval_expr (update_store store store') e1 
     else eval_match store e t
-  | _ -> raise NotExaustive
-  
+  | _ -> raise NotExhaustive
+
 and eval_defs defs = List.fold_left (fun acc d -> match d with
     | DVal (l, e) -> let store' = begin
         match bind_pattern l (eval_expr acc e) with 
         | Some s -> s
-        | None -> raise NotExaustive
+        | None -> raise NotExhaustive
       end in
       update_store acc store'
     | DType _ -> acc) Store.empty defs

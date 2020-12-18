@@ -1,7 +1,63 @@
 open Ast
 
+exception NotExhaustive
+
 let update_store store store' = 
   Store.fold (fun k v acc -> Store.add k v acc) store store'
+
+let rec same_type_pat p t = 
+  match p,t with
+  | PUnit, TUnit -> true
+  | PWild, _ -> true
+  | PBool b1, TBool -> true
+  | PInt i1, TInt -> true
+  | PChar c1, TChar -> true
+  | PVar v, _ -> true
+  | PPair (a1, a2), TPair (b1, b2) -> same_type_pat a1 b1 && same_type_pat a2 b2
+  | PRecord lst, TRecord r -> true
+  | _ -> false
+
+let rec bind_type_pat (p : pat) (t : vtype) : vtype Store.t option =
+  if not (same_type_pat p t) then None else 
+    match p,t with
+    | PUnit, TUnit -> Some (Store.empty)
+    | PWild, _ -> Some (Store.empty)
+    | PBool b1, TBool  -> Some (Store.empty)
+    | PInt i1, TInt -> Some (Store.empty)
+    | PChar c1, TChar ->  Some (Store.empty)
+    | PVar b, _ -> Some (Store.add b t Store.empty)
+    | PPair (a1, a2), TPair (b1, b2) -> Some (multi_bind a1 a2 b1 b2)
+    | PRecord lst, TRecord r ->
+      List.fold_left (fun acc s ->
+          Option.bind acc (fun store ->
+              RecordType.find_opt s r
+              |> Option.map (fun v -> Store.add s v store)))
+        (Some Store.empty) lst
+    | _ -> None
+and 
+  multi_bind a1 a2 b1 b2 =
+  let x = (bind_type_pat a1 b1) in
+  let y = (bind_type_pat a2 b2) in
+  begin match x with
+    | Some s -> 
+      begin 
+        match y with 
+        | Some s' -> update_store s s'
+        | None -> s
+      end
+    | None -> 
+      begin
+        match y with 
+        | Some s' -> s'
+        | None -> Store.empty
+      end
+  end 
+
+let dealias aliases = function
+  | TAlias s -> (match Store.find_opt s aliases with
+      | Some t -> t
+      | None -> failwith "Undefined alias")
+  | t -> t
 
 let rec type_of_value = function
   | Int _ -> TInt
@@ -15,18 +71,18 @@ let rec type_of_value = function
   | Pair (v1, v2) -> TPair ((type_of_value v1, type_of_value v2))
   | Function _ -> failwith "unimplemented"
   | Sum _ -> failwith "unimplemented"
-
-let dealias aliases = function
-  | TAlias s -> (match Store.find_opt s aliases with
-      | Some t -> t
-      | None -> failwith "Undefined alias")
-  | t -> t
-
-let rec typecheck aliases store e =
+  | Lazy (e, s) -> typecheck Store.empty Store.empty e
+and typecheck aliases store e =
   let typecheck store e = typecheck aliases store e in
   match e with
-  | Let (p, e1, e2) -> failwith "unimplemented" (** let store' = Store.add s (typecheck store e1) store in
-                                                    typecheck store' e2 *)
+  | Let (p, e1, e2) -> let t = typecheck store e1 in
+    let store' = 
+      begin
+        match bind_type_pat p t with 
+        | Some s -> s
+        | None -> failwith "no bindings"
+      end in
+    typecheck (update_store store store') e2
   | MakePair (e1, e2) -> TPair(typecheck store e1, typecheck store e2)
   | Fst e -> (match typecheck store e with
       | TPair (t1, _) -> t1
@@ -92,7 +148,17 @@ let rec typecheck aliases store e =
       match uop with 
       | Not -> if t1 = TBool then TBool else failwith "wrong unop type"
     end 
-  | Match (p, e) -> failwith "unimplemented"
+  | Match (e, lst) ->
+    List.fold_left (fun acc (p, e') ->
+        typecheck store e
+        |> bind_type_pat p
+        |> Option.map (fun s -> typecheck (update_store store s) e')
+        |> (fun o ->
+            Option.bind o (fun t ->
+                if t = Option.value acc ~default:t then Some t
+                else raise NotExhaustive)))
+      None lst
+    |> Option.get
   | Var v -> (match Store.find_opt v store with
       | Some t -> t
       | None -> failwith "No var in scope")
@@ -101,8 +167,12 @@ let rec typecheck aliases store e =
     | _ -> failwith "fixing non-function"
 
 and def_types defs = List.fold_left (fun (a, v) d -> match d with
-    | DVal (l, e) -> failwith "unimplemented"
-    | DType (l, t) -> failwith "unimplemented") (Store.empty, Store.empty) defs
+    | DVal (l, e) -> let store' = begin 
+        match bind_type_pat l (typecheck a v e) with 
+        | Some s -> s
+        | None -> failwith "no valid binding"
+      end in (a, update_store v store')
+    | DType (l, t) -> (Store.add l t a, v)) (Store.empty, Store.empty) defs
 
 let typecheck_program (defs, e) =
   let (aliases, store) = def_types defs in
