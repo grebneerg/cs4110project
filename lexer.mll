@@ -64,6 +64,7 @@ rule token = parse
 | ":"           { COLON }
 | ";"           { SEMICOLON }
 | "."           { DOT }
+| "_"           { WILDCARD }
 | "let"         { LET }
 | "in"          { IN }
 | "if"          { IF }

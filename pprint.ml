@@ -14,7 +14,7 @@ let rec string_of_type = function
       (fun l t acc -> (sprintf "%s: %s" l (string_of_type t)) :: acc) r []
     |> String.concat ", "
     |> sprintf "{%s}"
-  
+
 
 let string_of_binop = function
   | Eq -> "="
@@ -32,7 +32,16 @@ let string_of_binop = function
 let string_of_unop = function
   | Not -> "not"
 
-let rec string_of_value = function
+let rec string_of_pattern = function
+  | PUnit -> "()"
+  | PWild -> "_"
+  | PInt n -> string_of_int n
+  | PBool b -> string_of_bool b
+  | PChar c -> String.make 1 c
+  | PPair (v1, v2) ->
+    sprintf "(%s, %s)" (string_of_pattern v1) (string_of_pattern v2)
+and 
+  string_of_value = function
   | Unit -> "()"
   | Int n -> string_of_int n
   | Bool b -> string_of_bool b
@@ -42,8 +51,8 @@ let rec string_of_value = function
   | Record _ -> "some record"
   | Function (s, _, e) -> sprintf "func %s -> %s" s (string_of_expr e)
 and string_of_expr = function
-  | Let (v, e1, e2) ->
-    sprintf "Let %s = %s in %s" v (string_of_expr e1) (string_of_expr e2)
+  | Let (p, e1, e2) ->
+    sprintf "Let %s = %s in %s" (string_of_pattern p) (string_of_expr e1) (string_of_expr e2)
   | MakePair (e1, e2) ->
     sprintf "(%s, %s)" (string_of_expr e1) (string_of_expr e2)
   | MakeRec l -> List.map (fun (s, e) -> s ^ ": " ^ (string_of_expr e)) l
