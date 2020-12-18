@@ -6,15 +6,15 @@ let rec string_of_type = function
   | TUnit -> "unit"
   | TBool -> "bool"
   | TChar -> "char"
-  | TPair (t1, t2) ->  sprintf "%s * %s" (string_of_type t1) (string_of_type t2)
-  | TFunction (t1, t2) -> sprintf "%s -> %s" (string_of_type t1) (string_of_type t2)
-  | TSum (t1, t2) -> sprintf "%s + %s" (string_of_type t1) (string_of_type t2)
+  | TPair (t1, t2) ->  sprintf "(%s * %s)" (string_of_type t1) (string_of_type t2)
+  | TFunction (t1, t2) -> sprintf "(%s -> %s)" (string_of_type t1) (string_of_type t2)
+  | TSum (t1, t2) -> sprintf "(%s + %s)" (string_of_type t1) (string_of_type t2)
   | TRecord r ->
     RecordType.fold
       (fun l t acc -> (sprintf "%s: %s" l (string_of_type t)) :: acc) r []
     |> String.concat ", "
     |> sprintf "{%s}"
-
+  | TAlias s -> s
 
 let string_of_binop = function
   | Eq -> "="
@@ -40,6 +40,7 @@ let rec string_of_pattern = function
   | PChar c -> String.make 1 c
   | PPair (v1, v2) ->
     sprintf "(%s, %s)" (string_of_pattern v1) (string_of_pattern v2)
+  | _ -> failwith "no support"
 and 
   string_of_value = function
   | Unit -> "()"
@@ -50,14 +51,19 @@ and
     sprintf "(%s, %s)" (string_of_value v1) (string_of_value v2)
   | Record _ -> "some record"
   | Function (s, _, e) -> sprintf "func %s -> %s" s (string_of_expr e)
+  | Sum s -> (match s with
+      | Left v -> sprintf "left: %s" (string_of_value v)
+      | Right v -> sprintf "right: %s" (string_of_value v))
+  | Lazy (e, _) -> sprintf "lazy: %s" (string_of_expr e)
 and string_of_expr = function
   | Let (p, e1, e2) ->
-    sprintf "Let %s = %s in %s" (string_of_pattern p) (string_of_expr e1) (string_of_expr e2)
+    sprintf "Let %s = %s in %s" (string_of_pattern p)
+      (string_of_expr e1) (string_of_expr e2)
   | MakePair (e1, e2) ->
     sprintf "(%s, %s)" (string_of_expr e1) (string_of_expr e2)
   | MakeRec l -> List.map (fun (s, e) -> s ^ ": " ^ (string_of_expr e)) l
                  |> String.concat ", "
-                 |> sprintf "(%s)"
+                 |> sprintf "{%s}"
   | Application (e1, e2) ->
     sprintf "%s %s" (string_of_expr e1) (string_of_expr e2)
   | If (e1, e2, e3) ->
@@ -72,5 +78,6 @@ and string_of_expr = function
   | MakeFunction (s, _, e) -> sprintf "func %s -> %s" s (string_of_expr e)
   | Fst e -> sprintf "fst %s" (string_of_expr e)
   | Snd e -> sprintf "snd %s" (string_of_expr e)
+  | _ -> failwith "no support"
 
 let string_of_program p = snd p |> string_of_expr

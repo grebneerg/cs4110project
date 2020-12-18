@@ -53,11 +53,30 @@ and
       end
   end 
 
-let dealias aliases = function
+let rec dealias aliases = function
   | TAlias s -> (match Store.find_opt s aliases with
       | Some t -> t
       | None -> failwith "Undefined alias")
+  | TSum (l, r) -> TSum (dealias aliases l, dealias aliases r)
+  | TPair (a, b) -> TPair (dealias aliases a, dealias aliases b)
+  | TFunction (a, b) -> TFunction (dealias aliases a, dealias aliases b)
+  | TRecord r -> TRecord(RecordType.map (dealias aliases) r)
   | t -> t
+
+let rec realias aliases t = match Store.fold (fun k v acc -> if v = t then Some k else None) aliases None with
+  | Some k -> TAlias k
+  | None -> match t with
+    | TSum (l, r) -> TSum (realias aliases l, realias aliases r)
+    | TPair (a, b) -> TPair (realias aliases a, realias aliases b)
+    | TFunction (a, b) -> TFunction (realias aliases a, realias aliases b)
+    | TRecord r -> TRecord(RecordType.map (realias aliases) r)
+    | t -> t
+
+let max_re aliases t =
+  let rec inner t = match realias aliases t with
+    | t' when t' = t -> t
+    | t' -> inner t' in
+  inner t
 
 let rec type_of_value = function
   | Int _ -> TInt
@@ -73,6 +92,7 @@ let rec type_of_value = function
   | Sum _ -> failwith "unimplemented"
   | Lazy (e, s) -> typecheck Store.empty Store.empty e
 and typecheck aliases store e =
+  let (=:=) t1 t2 = (max_re aliases t1) = (max_re aliases t2) in
   let typecheck store e = typecheck aliases store e in
   match e with
   | Let (p, e1, e2) -> let t = typecheck store e1 in
@@ -100,7 +120,7 @@ and typecheck aliases store e =
           | None -> failwith "invalid record field")
       | _ -> failwith "Not a record")
   | MakeFunction (s, t, e) ->
-    let t = dealias aliases t in
+    let t = dealias aliases t in 
     let store' = Store.add s t store in TFunction (t, typecheck store' e)
   | MakeLeft (t1, t2, e) ->
     let t1 = dealias aliases t1 in
@@ -113,14 +133,14 @@ and typecheck aliases store e =
   | Case (e1, e2, e3) ->
     (match typecheck store e1, typecheck store e2, typecheck store e3 with
      | TSum(ta, tb), TFunction (t2, t3), TFunction (t4, t5)
-       when ta = t2 && tb = t4 && t3 = t5 -> t5
+       when ta =:= t2 && tb =:= t4 && t3 =:= t5 -> t5
      | _ -> failwith "Bad match types")
   | Application (e1, e2) -> (match typecheck store e1, typecheck store e2 with
-      | TFunction (t1, t2), t3 when t1 = t3 -> t2
+      | TFunction (t1, t2), t3 when t1 =:= t3 -> t2
       | _ -> failwith "Bad application")
   | If (e1, e2, e3) -> begin 
       match typecheck store e1, typecheck store e2, typecheck store e3 with 
-      | TBool, t2, t3 when t2 = t3 -> t2
+      | TBool, t2, t3 when t2 =:= t3 -> t2
       | _ -> failwith "bad if statement types"
     end
   | Value v -> type_of_value v
@@ -163,7 +183,7 @@ and typecheck aliases store e =
       | Some t -> t
       | None -> failwith "No var in scope")
   | Fix e -> match typecheck store e with 
-    | TFunction (TFunction (t1, t2), TFunction (t3, t4)) when t1 = t3 && t2 = t4 -> TFunction (t1, t4)
+    | TFunction (TFunction (t1, t2), TFunction (t3, t4)) when t1 =:= t3 && t2 =:= t4 -> TFunction (t1, t4)
     | _ -> failwith "fixing non-function"
 
 and def_types defs = List.fold_left (fun (a, v) d -> match d with
