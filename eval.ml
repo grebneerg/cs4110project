@@ -133,14 +133,22 @@ let rec eval_expr (store: value Store.t) = function
                         |> Lexing.from_channel 
                         |> Parser.program Lexer.token in
     typecheck_program p |> ignore; Record (p |> fst |> eval_defs)
-  | Value v -> v
+  | Value v -> (match v with
+      | Lazy (e, s) -> eval_expr s e
+      | _ -> v)
   | Match (e, lst) -> eval_match store e lst
   | BinOp (bop, e1, e2) ->
     eval_binop bop (eval_expr store e1) (eval_expr store e2)
   | UnOp (uop, e) -> eval_unop uop (eval_expr store e)
-  | Var v -> match Store.find_opt v store with
-    | None -> raise UndefinedVar
-    | Some value -> value
+  | Var v -> (match Store.find_opt v store with
+      | None -> raise UndefinedVar
+      | Some value -> Value value |> eval_expr store)
+  | Fix e -> match eval_expr store e with
+    | Function (v, s, e') ->
+      let rec store' = Store.add v (Lazy (Fix e, store)) s in
+      eval_expr store' e'
+    | _ -> raise IllegalValue
+    
 and eval_match store e lst = 
   let v = eval_expr store e in 
   match lst with 
@@ -154,6 +162,7 @@ and eval_match store e lst =
       eval_expr (update_store store store') e1 
     else eval_match store e t
   | _ -> raise NotExaustive
+  
 and eval_defs defs = List.fold_left (fun acc d -> match d with
     | DVal (l, e) -> let store' = begin
         match bind_pattern l (eval_expr acc e) with 

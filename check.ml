@@ -92,11 +92,13 @@ let rec typecheck aliases store e =
       match uop with 
       | Not -> if t1 = TBool then TBool else failwith "wrong unop type"
     end 
-  | Var v -> begin match Store.find_opt v store with
-      | Some t -> t
-      | None -> failwith "No var in scope"
-    end
   | Match (p, e) -> failwith "unimplemented"
+  | Var v -> (match Store.find_opt v store with
+      | Some t -> t
+      | None -> failwith "No var in scope")
+  | Fix e -> match typecheck store e with 
+    | TFunction (TFunction (t1, t2), TFunction (t3, t4)) when t1 = t3 && t2 = t4 -> TFunction (t1, t4)
+    | _ -> failwith "fixing non-function"
 
 and def_types defs = List.fold_left (fun (a, v) d -> match d with
     | DVal (l, e) -> failwith "unimplemented"
