@@ -65,8 +65,8 @@ expr : LET pat EQUALS expr IN expr        { Let ($2, $4, $6) }
      | LCURLY record RCURLY                 { MakeRec $2 }
      | expr binop expr                      { BinOp ($2, $1, $3) }
      | FUNCTION VAR COLON vtype ARROW expr  { MakeFunction ($2, $4, $6) }
-     | LEFT LPAREN vtype PLUS vtype RPAREN expr                            { MakeLeft ($3, $5, $7) }
-     | RIGHT LPAREN vtype PLUS vtype RPAREN expr                           { MakeRight ($3, $5, $7) }
+     | LEFT LPAREN vtype RPAREN expr                            { MakeLeft ($3, $5) }
+     | RIGHT LPAREN vtype RPAREN expr                           { MakeRight ($3, $5) }
      | MATCH expr WITH case END             { Match ($2, $4) }
      | CASE expr OF expr PIPE expr          { Case ($2, $4, $6) }
      | IMPORT LPAREN FILEPATH RPAREN        { Import $3 }

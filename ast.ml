@@ -64,13 +64,12 @@ and expr =
   | Application of expr * expr
   | If of expr * expr * expr
   | Var of string
-  (* | ModUse of expr * string *)
   | Value of value
   | BinOp of binop * expr * expr
   | UnOp of unop * expr
   | Case of expr * expr * expr
-  | MakeLeft of vtype * vtype * expr
-  | MakeRight of vtype * vtype * expr
+  | MakeLeft of vtype * expr
+  | MakeRight of vtype * expr
   | Import of string
   | Match of expr * (pat * expr) list
   | Fix of expr

@@ -1,4 +1,0 @@
-type list = unit + (int * list);
-let empty = _left(unit + (int * list)) ();
-let cons = func h: int -> func t: list -> _right(unit + (int * list)) (h, t);
-cons 1 empty

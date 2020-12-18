@@ -1,5 +1,7 @@
 open Ast
 
+open Pprint
+
 exception NotExhaustive
 
 let update_store store store' = 
@@ -120,21 +122,17 @@ and typecheck aliases store e =
           | None -> failwith "invalid record field")
       | _ -> failwith "Not a record")
   | MakeFunction (s, t, e) ->
-    let t = dealias aliases t in 
+    (* let t = dealias aliases t in  *)
     let store' = Store.add s t store in TFunction (t, typecheck store' e)
-  | MakeLeft (t1, t2, e) ->
-    let t1 = dealias aliases t1 in
-    let t2 = dealias aliases t2 in
-    if t1 = typecheck store e then TSum (t1, t2) else failwith "incorrect left type"
-  | MakeRight (t1, t2, e) -> 
-    let t1 = dealias aliases t1 in 
-    let t2 = dealias aliases t2 in 
-    if t2 = typecheck store e then TSum (t1, t2) else failwith "incorrect right type"
+  | MakeLeft (t, e) -> (match dealias aliases t with
+      | TSum (t1, t2) -> if t1 =:= typecheck store e then TSum (t1, t2) else failwith "incorrect left type")
+  | MakeRight (t, e) -> (match dealias aliases t with
+      | TSum (t1, t2) -> if t2 =:= typecheck store e then TSum (t1, t2) else failwith "incorrect right type")
   | Case (e1, e2, e3) ->
-    (match typecheck store e1, typecheck store e2, typecheck store e3 with
+    (match typecheck store e1 |> dealias aliases, typecheck store e2 |> dealias aliases, typecheck store e3 |> dealias aliases with
      | TSum(ta, tb), TFunction (t2, t3), TFunction (t4, t5)
        when ta =:= t2 && tb =:= t4 && t3 =:= t5 -> t5
-     | _ -> failwith "Bad match types")
+     | _ -> failwith "Bad cases for sum types")
   | Application (e1, e2) -> (match typecheck store e1, typecheck store e2 with
       | TFunction (t1, t2), t3 when t1 =:= t3 -> t2
       | _ -> failwith "Bad application")

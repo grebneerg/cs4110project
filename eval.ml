@@ -9,7 +9,7 @@ exception IllegalUnop
 exception NotExhaustive
 
 let update_store store store' = 
-  Store.fold (fun k v acc -> Store.add k v acc) store store'
+  Store.fold (fun k v acc -> Store.add k v acc) store' store
 
 let rec same_pattern p v = 
   match p,v with
@@ -116,8 +116,8 @@ let rec eval_expr (store: value Store.t) = function
         | Some v -> v
         | None -> raise IllegalExpression)
   | MakeFunction (s, _, e) -> Function (s, store, e)
-  | MakeLeft (_, _, e) -> Sum (Left (eval_expr store e))
-  | MakeRight (_, _, e) -> Sum (Right (eval_expr store e))
+  | MakeLeft (_, e) -> Sum (Left (eval_expr store e))
+  | MakeRight (_, e) -> Sum (Right (eval_expr store e))
   | Case (e1, e2, e3) -> begin
       match eval_expr store e1 with
       | Sum (Left v) -> Application (e2, Value v) |> eval_expr store
