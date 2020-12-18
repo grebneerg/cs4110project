@@ -49,6 +49,7 @@ type value =
   | Record of value RecordType.t
   | Function of string * value Store.t * expr
   | Sum of sum
+  | Lazy of expr * value Store.t
 and sum =
   | Left of value
   | Right of value
@@ -72,6 +73,7 @@ and expr =
   | MakeRight of vtype * vtype * expr
   | Import of string
   | Match of expr * (pat * expr) list
+  | Fix of expr
 
 type def =
   | DVal of string * expr

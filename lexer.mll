@@ -88,6 +88,7 @@ rule token = parse
 | "bool"        { TBOOL }
 | "char"        { TCHAR }
 | "type"        { TYPE }
+| "fix"         { FIX }
 | id as v       { VAR v }
 | digit+ as n   { INT (int_of_string n) }
 | eof           { EOF }

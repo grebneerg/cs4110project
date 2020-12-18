@@ -27,7 +27,6 @@ let eval_binop bop v1 v2 =
   | Or, Bool b1, Bool b2 -> Bool (b1 || b2)
   | _ -> raise IllegalBinop
 
-
 let rec eval_expr (store: value Store.t) = function
   | Let (s, e1, e2) -> let v = eval_expr store e1 in
     let store' = Store.add s v store in
@@ -83,14 +82,21 @@ let rec eval_expr (store: value Store.t) = function
                         |> Lexing.from_channel 
                         |> Parser.program Lexer.token in
     typecheck_program p |> ignore; Record (p |> fst |> eval_defs)
-  | Value v -> v
+  | Value v -> (match v with
+      | Lazy (e, s) -> eval_expr s e
+      | _ -> v)
   | Match (e, lst) -> failwith "unimplemented"
   | BinOp (bop, e1, e2) ->
     eval_binop bop (eval_expr store e1) (eval_expr store e2)
   | UnOp (uop, e) -> eval_unop uop (eval_expr store e)
-  | Var v -> match Store.find_opt v store with
-    | None -> raise UndefinedVar
-    | Some value -> value
+  | Var v -> (match Store.find_opt v store with
+      | None -> raise UndefinedVar
+      | Some value -> Value value |> eval_expr store)
+  | Fix e -> match eval_expr store e with
+    | Function (v, s, e') ->
+      let rec store' = Store.add v (Lazy (Fix e, store)) s in
+      eval_expr store' e'
+    | _ -> raise IllegalValue
 and eval_defs defs = List.fold_left (fun acc d -> match d with
     | DVal (l, e) -> Store.add l (eval_expr acc e) acc
     | DType _ -> acc) Store.empty defs

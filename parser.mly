@@ -13,7 +13,7 @@ open Lexing
 %token TRUE FALSE NOTEQUALS LESS LESSEQ GREATER GREATEREQ NOT AND MUL
 %token OR PLUS MINUS
 %token LET IN
-%token FUNCTION ARROW
+%token FUNCTION ARROW FIX
 %token TYPE
 %token IF
 %token IMPORT
@@ -70,6 +70,7 @@ expr : LET VAR EQUALS expr IN expr        { Let ($2, $4, $6) }
      | MATCH expr WITH case END             { Match ($2, $4) }
      | CASE expr OF expr PIPE expr          { Case ($2, $4, $6) }
      | IMPORT LPAREN FILEPATH RPAREN        { Import $3 }
+     | FIX expr                             { Fix $2 }
      | expr uexpr                           { Application ($1, $2) }
      | uexpr                                { $1 }
 
@@ -106,6 +107,7 @@ vtype : TINT                                { TInt }
       | vtype ARROW vtype                   { TFunction ($1, $3) }
       | LCURLY trec RCURLY                  { TRecord $2 }
       | VAR                                 { TAlias ($1) }
+      | LPAREN vtype RPAREN                 { $2 }
       
 trec : VAR COLON vtype COMMA trec           { RecordType.add $1 $3 $5 }
      | VAR COLON vtype                      { RecordType.add $1 $3 RecordType.empty }
