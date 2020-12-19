@@ -28,6 +28,8 @@ let string_of_binop = function
   | Add -> "+"
   | Sub -> "-"
   | Mul -> "*"
+  | Div -> "/"
+  | Mod -> "%"
 
 let string_of_unop = function
   | Not -> "not"
@@ -78,6 +80,7 @@ and string_of_expr = function
   | MakeFunction (s, _, e) -> sprintf "func %s -> %s" s (string_of_expr e)
   | Fst e -> sprintf "fst %s" (string_of_expr e)
   | Snd e -> sprintf "snd %s" (string_of_expr e)
-  | _ -> failwith "no support"
+  | RecAccess (e, s) -> sprintf "%s.%s" (string_of_expr e) s
+  | _ -> "unprintable" 
 
 let string_of_program p = snd p |> string_of_expr

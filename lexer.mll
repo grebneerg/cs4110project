@@ -36,7 +36,7 @@ let error lexbuf msg =
 let digit = ['-']?['0'-'9']
 let id = ['a'-'z'] ['a'-'z' '0'-'9']*
 let ws = [' ' '\t']
-let path = ['/']?(_+'/')*_+
+let path = ['/']?([^'"']+'/')*[^'"']+
 
 rule token = parse 
 | ws            { token lexbuf }
@@ -44,6 +44,8 @@ rule token = parse
 | "+"           { PLUS }
 | "-"           { MINUS }
 | "*"           { MUL }
+| "/"           { DIV }
+| "%"           { MOD }
 | "="           { EQUALS }
 | "<>"          { NOTEQUALS }
 | "<"           { LESS }

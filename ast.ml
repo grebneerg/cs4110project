@@ -36,6 +36,8 @@ type binop =
   | Add
   | Sub
   | Mul
+  | Div
+  | Mod
 
 type unop =
   | Not

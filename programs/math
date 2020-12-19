@@ -1,0 +1,12 @@
+let add = func a : int -> func b : int -> a + b;
+let sub = func a : int -> func b : int -> a - b;
+let mul = func a : int -> func b : int -> a * b;
+let div = func a : int -> func b : int -> a / b;
+let mod = func a : int -> func b : int -> a % b;
+let abs = func a : int -> if a < 0 then (-1 * a) else a;
+let pow = fix func f: (int -> int -> int) -> func a : int -> func b : int -> if b = 0 then 1 else a * (f a (b - 1));
+let gcd = fix func f: (int -> int -> int) -> func a : int -> func b : int -> if b = 0 then a else (f b (a % b));
+let fact = fix func f: (int -> int) -> func a: int -> if a <= 1 then 1 else a * f (a - 1);
+let max = func a : int -> func b : int -> if a > b then a else b;
+let min = func a : int -> func b : int -> if a > b then b else a;
+1

@@ -80,6 +80,12 @@ let max_re aliases t =
     | t' -> inner t' in
   inner t
 
+let max_de aliases t =
+  let rec inner t = match dealias aliases t with
+    | t' when t' = t -> t
+    | t' -> inner t' in
+  inner t
+
 let rec type_of_value aliases = function
   | Int _ -> TInt
   | Bool _ -> TBool
@@ -146,11 +152,11 @@ and typecheck aliases store e =
       | _ -> failwith "bad if statement types"
     end
   | Value v -> type_of_value v
-  | BinOp (bop, e1, e2) -> let t1 = typecheck store e1 in
-    let t2 = typecheck store e2 in 
+  | BinOp (bop, e1, e2) -> let t1 = typecheck store e1 |> max_de !aliases in
+    let t2 = typecheck store e2 |> max_de !aliases in 
     begin
       match bop with
-      | Add | Sub | Mul -> (match t1, t2 with  
+      | Add | Sub | Mul | Div | Mod -> (match t1, t2 with  
           | TInt, TInt -> TInt 
           | _ -> failwith "wrong binop type, expected int")
       | Geq | Gt | Lt | Leq | Eq | Neq -> (match t1, t2 with

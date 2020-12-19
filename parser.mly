@@ -10,7 +10,7 @@ open Lexing
 %token UNIT WILDCARD
 %token TINT TBOOL TCHAR TUNIT
 %token LPAREN RPAREN LCURLY RCURLY COMMA COLON EQUALS DOT SEMICOLON
-%token TRUE FALSE NOTEQUALS LESS LESSEQ GREATER GREATEREQ NOT AND MUL
+%token TRUE FALSE NOTEQUALS LESS LESSEQ GREATER GREATEREQ NOT AND MUL DIV MOD
 %token OR PLUS MINUS
 %token LET IN
 %token FUNCTION ARROW FIX
@@ -50,9 +50,11 @@ binop : EQUALS                              { Eq }
       | PLUS                                { Add }
       | MINUS                               { Sub }
       | MUL                                 { Mul }
+      | DIV                                 { Div }
+      | MOD                                 { Mod }
 
-uexpr : VAR                                 { Var $1 }
-      | expr DOT VAR                        { RecAccess ($1, $3) }
+uexpr : uexpr DOT VAR                        { RecAccess ($1, $3) }
+      | VAR                                 { Var $1 }
       | LPAREN expr RPAREN                  { $2 }
       | value                               { Value $1 }
 

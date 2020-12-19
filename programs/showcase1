@@ -1,0 +1,5 @@
+let intlist = import("programs/intlist");
+let math = import("programs/math");
+let fib = func b: int -> let nacci = fix func f: (int -> (int -> (intlist -> intlist))) -> func n1: int -> func n2: int -> func l: intlist -> if intlist.length l = b then l else f n2 (n1 + n2) (intlist.cons n1 l) in intlist.rev (nacci 1 1 intlist.empty);
+let transform = func t: (int -> int) -> fix func f: (intlist -> intlist) -> func l: intlist -> case l of func u: unit -> intlist.empty | func e: (int * intlist) -> intlist.cons (t (fst e)) (f (snd e));
+transform math.fact (fib 7)

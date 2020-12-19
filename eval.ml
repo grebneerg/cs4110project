@@ -70,6 +70,8 @@ let eval_binop bop v1 v2 =
   | Add, Int n1, Int n2 -> Int (n1 + n2)
   | Sub, Int n1 , Int n2 -> Int (n1 - n2)
   | Mul, Int n1, Int n2 -> Int (n1 * n2)
+  | Div, Int n1, Int n2 -> Int (n1 / n2)
+  | Mod, Int n1, Int n2 -> Int (n1 mod n2)
   | Eq, Int n1, Int n2 -> Bool (n1 = n2)
   | Neq, Int n1, Int n2 -> Bool (n1 <> n2)
   | Lt, Int n1, Int n2 -> Bool (n1 < n2)
