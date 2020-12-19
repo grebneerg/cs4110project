@@ -3,5 +3,9 @@ let empty = _left(intlist) ();
 let cons = func h: int -> func t: intlist -> _right(intlist) (h, t);
 let hd = func l: intlist -> case l of func u: unit -> _left(unit + int) () | func e: (int * intlist) -> _right(unit + int) (fst e);
 let tl = func l: intlist -> case l of func u: unit -> _left(intlist) u | func e: (int * intlist) -> snd e;
+let length = fix func f: (intlist -> int) -> func l: intlist -> case (hd l) of func u: unit -> 0 | func h: int -> 1 + f (tl l);
 let sum = fix func f: (intlist -> int) -> func l: intlist -> case (hd l) of func u: unit -> 0 | func h: int -> h + f (tl l);
-let l = cons 1 empty in let l = cons 2 l in let l = cons 3 l in sum l
+let rev = func l: intlist ->
+    let inner = fix func f: (intlist -> (intlist -> intlist)) -> func l: intlist -> func nl: intlist -> 
+        case (hd l) of func u: unit -> nl | func h: int -> (f (tl l) (cons h nl)) in inner l empty;
+let l = cons 1 empty in let l = cons 2 l in let l = cons 3 l in rev l

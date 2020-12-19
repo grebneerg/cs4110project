@@ -1,11 +1,11 @@
 open Ast
-
+open Printf
 open Pprint
 
 exception NotExhaustive
 
 let update_store store store' = 
-  Store.fold (fun k v acc -> Store.add k v acc) store store'
+  Store.fold (fun k v acc -> Store.add k v acc) store' store 
 
 let rec same_type_pat p t = 
   match p,t with
@@ -80,22 +80,24 @@ let max_re aliases t =
     | t' -> inner t' in
   inner t
 
-let rec type_of_value = function
+let rec type_of_value aliases = function
   | Int _ -> TInt
   | Bool _ -> TBool
   | Unit -> TUnit
   | Char _ -> TChar
   | Record r ->
     TRecord (RecordType.fold
-               (fun l v acc -> RecordType.add l (type_of_value v) acc)
+               (fun l v acc -> RecordType.add l (type_of_value aliases v) acc)
                r RecordType.empty)
-  | Pair (v1, v2) -> TPair ((type_of_value v1, type_of_value v2))
+  | Pair (v1, v2) -> TPair ((type_of_value aliases v1, type_of_value aliases v2))
   | Function _ -> failwith "unimplemented"
   | Sum _ -> failwith "unimplemented"
-  | Lazy (e, s) -> typecheck Store.empty Store.empty e
+  | Lazy (e, s) -> typecheck aliases Store.empty e
 and typecheck aliases store e =
-  let (=:=) t1 t2 = (max_re aliases t1) = (max_re aliases t2) in
+  let (=:=) t1 t2 = (max_re !aliases t1) = (max_re !aliases t2) in
   let typecheck store e = typecheck aliases store e in
+  let type_of_value = type_of_value aliases in
+  let dealias = dealias !aliases in
   match e with
   | Let (p, e1, e2) -> let t = typecheck store e1 in
     let store' = 
@@ -124,18 +126,20 @@ and typecheck aliases store e =
   | MakeFunction (s, t, e) ->
     (* let t = dealias aliases t in  *)
     let store' = Store.add s t store in TFunction (t, typecheck store' e)
-  | MakeLeft (t, e) -> (match dealias aliases t with
-      | TSum (t1, t2) -> if t1 =:= typecheck store e then TSum (t1, t2) else failwith "incorrect left type")
-  | MakeRight (t, e) -> (match dealias aliases t with
-      | TSum (t1, t2) -> if t2 =:= typecheck store e then TSum (t1, t2) else failwith "incorrect right type")
+  | MakeLeft (t, e) -> (match dealias t with
+      | TSum (t1, t2) -> if t1 =:= typecheck store e then TSum (t1, t2) else failwith "incorrect left type"
+      | _ -> failwith "Non sum type specified in _left")
+  | MakeRight (t, e) -> (match dealias t with
+      | TSum (t1, t2) -> if t2 =:= typecheck store e then TSum (t1, t2) else failwith "incorrect right type"
+      | _ -> failwith "Non sum type specified in _right")
   | Case (e1, e2, e3) ->
-    (match typecheck store e1 |> dealias aliases, typecheck store e2 |> dealias aliases, typecheck store e3 |> dealias aliases with
+    (match typecheck store e1 |> dealias, typecheck store e2 |> dealias, typecheck store e3 |> dealias with
      | TSum(ta, tb), TFunction (t2, t3), TFunction (t4, t5)
        when ta =:= t2 && tb =:= t4 && t3 =:= t5 -> t5
      | _ -> failwith "Bad cases for sum types")
   | Application (e1, e2) -> (match typecheck store e1, typecheck store e2 with
       | TFunction (t1, t2), t3 when t1 =:= t3 -> t2
-      | _ -> failwith "Bad application")
+      | _ -> sprintf "Bad application: %s to %s" (string_of_expr e1) (string_of_expr e2) |> failwith)
   | If (e1, e2, e3) -> begin 
       match typecheck store e1, typecheck store e2, typecheck store e3 with 
       | TBool, t2, t3 when t2 =:= t3 -> t2
@@ -160,7 +164,8 @@ and typecheck aliases store e =
                         |> open_in
                         |> Lexing.from_channel 
                         |> Parser.program Lexer.token in
-    TRecord (p |> fst |> def_types |> snd)
+    p |> fst |> def_types
+    |> fun (a, b) -> aliases := (update_store !aliases !a); TRecord b
   | UnOp (uop, e) -> let t1 = typecheck store e in
     begin 
       match uop with 
@@ -181,8 +186,10 @@ and typecheck aliases store e =
       | Some t -> t
       | None -> failwith "No var in scope")
   | Fix e -> match typecheck store e with 
-    | TFunction (TFunction (t1, t2), TFunction (t3, t4)) when t1 =:= t3 && t2 =:= t4 -> TFunction (t1, t4)
-    | _ -> failwith "fixing non-function"
+    | TFunction (TFunction (t1, t2), TFunction (t3, t4))
+      when t1 =:= t3 && t2 =:= t4 -> TFunction (t1, t4)
+    | TFunction (TFunction (t1, t2), TFunction (t3, t4)) as t -> string_of_type t |> sprintf "fixing non-function aaa %s" |> failwith;
+    | t -> string_of_type t |> sprintf "fixing non-function %s" |> failwith;
 
 and def_types defs = List.fold_left (fun (a, v) d -> match d with
     | DVal (l, e) -> let store' = begin 
@@ -190,7 +197,7 @@ and def_types defs = List.fold_left (fun (a, v) d -> match d with
         | Some s -> s
         | None -> failwith "no valid binding"
       end in (a, update_store v store')
-    | DType (l, t) -> (Store.add l t a, v)) (Store.empty, Store.empty) defs
+    | DType (l, t) -> (ref (Store.add l t !a), v)) (ref Store.empty, Store.empty) defs
 
 let typecheck_program (defs, e) =
   let (aliases, store) = def_types defs in
